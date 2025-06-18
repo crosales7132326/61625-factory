@@ -1,21 +1,23 @@
-name: Daily batch
+name: Daily batch      # line 1 ok
 
-on:
+on:                    # line 3 must have the colon
   schedule:
     - cron:  '0 4 * * *'      # every day 04:00 UTC
     - cron:  '0 3 * * 0'      # Sunday 03:00 UTC
-  workflow_dispatch:
+  workflow_dispatch:          # allows manual run
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-      REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
-      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-      E11_KEY: ${{ secrets.E11_KEY }}
-      PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+
+    env:                      # ← 4 spaces indent
+      OPENAI_KEY:          ${{ secrets.OPENAI_KEY }}
+      REDDIT_CLIENT_ID:    ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_SECRET:       ${{ secrets.REDDIT_SECRET }}
+      REDDIT_USER_AGENT:   ${{ secrets.REDDIT_USER_AGENT }}
+      E11_KEY:            ${{ secrets.E11_KEY }}
+      PEXELS_KEY:         ${{ secrets.PEXELS_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,12 +32,10 @@ jobs:
           node-version: '20'
 
       - name: Install Python deps
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Install Node deps
-        run: |
-          npm ci
+        run: npm ci
 
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
