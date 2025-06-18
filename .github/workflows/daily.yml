@@ -1,10 +1,10 @@
-name: Daily batch      # line 1 ok
+name: Daily batch
 
-on:                    # line 3 must have the colon
+on:
   schedule:
-    - cron:  '0 4 * * *'      # every day 04:00 UTC
-    - cron:  '0 3 * * 0'      # Sunday 03:00 UTC
-  workflow_dispatch:          # allows manual run
+    - cron:  '0 4 * * *'     # daily 04:00 UTC
+    - cron:  '0 3 * * 0'     # Sunday compile 03:00 UTC
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,14 +17,13 @@ jobs:
       REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
       E11_KEY:           ${{ secrets.E11_KEY }}
       PEXELS_KEY:        ${{ secrets.PEXELS_KEY }}
-      # Uncomment if you added these:
-      # REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}
+      # REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}   # ← uncomment if added
       # REDDIT_PASSWORD:   ${{ secrets.REDDIT_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache remotion binary
+      - name: Cache Remotion binary
         uses: actions/cache@v4
         with:
           path: ~/.cache/remotion
@@ -49,7 +48,8 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      # ---------- DEBUG BLOCK ----------
+      # ────────────────────────────────────────────────
+      # DEBUG BLOCK – confirm Reddit secrets are present
       - name: DEBUG – show Reddit env
         run: |
           echo "CID=[$REDDIT_CLIENT_ID]"
@@ -72,11 +72,7 @@ try:
 except Exception as e:
     print("EXCEPTION:", e)
 PY
-        env:
-          REDDIT_CLIENT_ID:  ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_SECRET:     ${{ secrets.REDDIT_SECRET }}
-          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-      # ---------------------------------
+      # ────────────────────────────────────────────────
 
       - name: Run batch
         run: make daily
