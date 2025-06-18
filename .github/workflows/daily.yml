@@ -1,80 +1,44 @@
-yaml
-
-name: Daily Video Generation
+name: Daily batch
 
 on:
   schedule:
-    # Daily at 04:00 UTC
-    - cron: '0 4 * * *'
-    # Sundays at 03:00 UTC for compilation
-    - cron: '0 3 * * 0'
-  workflow_dispatch: # Allow manual triggering
+    - cron:  '0 4 * * *'      # every day 04:00 UTC
+    - cron:  '0 3 * * 0'      # Sunday 03:00 UTC
+  workflow_dispatch:
 
 jobs:
-  generate-videos:
+  build:
     runs-on: ubuntu-latest
-    
+    env:
+      OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      E11_KEY: ${{ secrets.E11_KEY }}
+      PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-        
-    - name: Set up Node.js 20
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'package-lock.json'
-        
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
-        
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Install Node dependencies
-      run: npm ci
-      
-    - name: Set up environment variables
-      env:
-        OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-        REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-        REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
-        REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-        E11_KEY: ${{ secrets.E11_KEY }}
-        E11_VOICE: ${{ secrets.E11_VOICE }}
-        PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
-      run: |
-        echo "OPENAI_KEY=${OPENAI_KEY}" >> .env
-        echo "REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}" >> .env
-        echo "REDDIT_SECRET=${REDDIT_SECRET}" >> .env
-        echo "REDDIT_USER_AGENT=${REDDIT_USER_AGENT}" >> .env
-        echo "E11_KEY=${E11_KEY}" >> .env
-        echo "E11_VOICE=${E11_VOICE}" >> .env
-        echo "PEXELS_KEY=${PEXELS_KEY}" >> .env
-        
-    - name: Generate daily videos
-      run: |
-        if [[ $(date +%u) -eq 7 ]]; then
-          echo "Sunday: Running compilation"
-          make compile || exit 1
-        else
-          echo "Weekday: Running daily video generation"
-          make daily || exit 1
-        fi
-        
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: generated-videos
-        path: out/
-        retention-days: 30
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python deps
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Node deps
+        run: |
+          npm ci
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Run batch
+        run: make daily
