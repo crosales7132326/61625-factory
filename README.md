@@ -19,6 +19,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 npm ci
+make assets
 ```
 
 2. Copy environment template and fill in your API keys:
@@ -60,7 +61,7 @@ The system runs automatically via GitHub Actions:
 
 ## Quick Testing
 
-To run a quick test that generates a single 30-second video:
+To run a quick test that generates a single short video (about 60 seconds):
 
 1. Go to Actions tab in GitHub
 2. Select "Quick Test" workflow

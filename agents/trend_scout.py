@@ -45,7 +45,7 @@ def get_embedding(client: openai.OpenAI, text: str) -> List[float]:
 class TrendScout:
     SUBREDDITS = ["tifu", "confession", "aita"]
 
-    def __init__(self, posts_per_sub: int, allow_fallback: bool):
+    def __init__(self, posts_per_sub: int = 50, allow_fallback: bool = False):
         self.posts_per_sub = posts_per_sub
         self.allow_fallback = allow_fallback
 
@@ -58,24 +58,38 @@ class TrendScout:
             )
             if not os.getenv(k)
         ]
-        if missing and not self.allow_fallback:
-            raise RuntimeError(f"Missing Reddit env vars: {', '.join(missing)}")
+        if missing:
+            print(
+                f"⚠️  Missing Reddit env vars: {', '.join(missing)}", file=sys.stderr
+            )
 
-        self.reddit = praw.Reddit(
-            client_id=os.getenv("REDDIT_CLIENT_ID"),
-            client_secret=os.getenv("REDDIT_SECRET"),
-            user_agent=os.getenv("REDDIT_USER_AGENT"),
-            username=os.getenv("REDDIT_USERNAME"),
-            password=os.getenv("REDDIT_PASSWORD"),
-            check_for_async=False,
-        )
+        try:
+            self.reddit = praw.Reddit(
+                client_id=os.getenv("REDDIT_CLIENT_ID"),
+                client_secret=os.getenv("REDDIT_SECRET"),
+                user_agent=os.getenv("REDDIT_USER_AGENT"),
+                username=os.getenv("REDDIT_USERNAME"),
+                password=os.getenv("REDDIT_PASSWORD"),
+                check_for_async=False,
+            )
+        except Exception:
+            self.reddit = None
 
-        self.openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_KEY"))
+        openai_key = os.getenv("OPENAI_KEY")
+        if openai_key:
+            try:
+                self.openai_client = openai.OpenAI(api_key=openai_key)
+            except Exception:
+                self.openai_client = None
+        else:
+            self.openai_client = None
 
     # ──────────────────────────────────────────────────────────────────
     def fetch_posts(self) -> List[Dict]:
         posts: List[Dict] = []
         try:
+            if self.reddit is None:
+                raise prawcore.exceptions.Forbidden()
             for sub in self.SUBREDDITS:
                 for p in (
                     self.reddit.subreddit(sub)
@@ -91,7 +105,7 @@ class TrendScout:
                                 "id": p.id,
                             }
                         )
-        except prawcore.exceptions.Forbidden:
+        except Exception:
             if self.allow_fallback:
                 print(
                     "⚠️  Reddit auth failed – using built-in mock hook instead.",
@@ -119,6 +133,8 @@ class TrendScout:
             "shocking twist unexpected ending dramatic reveal "
             "personal story emotional journey life changing moment"
         )
+        if self.openai_client is None:
+            return raw
         seed_vec = get_embedding(self.openai_client, seed)
 
         for post in raw:
