@@ -42,7 +42,7 @@ def call_openai(prompt: str) -> str:
 
 # ─────────────────────────────── main class ───────────────────────────
 class StoryWriter:
-    def __init__(self, limit: int, allow_fallback: bool):
+    def __init__(self, limit: int = 10, allow_fallback: bool = True):
         self.limit = limit
         self.allow_fallback = allow_fallback
 

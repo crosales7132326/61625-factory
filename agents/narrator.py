@@ -93,7 +93,8 @@ class Narrator:
             
             filename = f"{script['id']}.wav"
             
-            if self.generate_audio(script['story'], filename):
+            text = f"{script['title']}. {script['story']}"
+            if self.generate_audio(text, filename):
                 successful_count += 1
                 script['audio_file'] = filename
             else:
