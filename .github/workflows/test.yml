@@ -1,13 +1,10 @@
-name: Daily batch
+name: Quick Test
 
 on:
-  schedule:
-    - cron: '0 4 * * *'    # daily 04 UTC
-    - cron: '0 3 * * 0'    # Sunday 03 UTC
   workflow_dispatch:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     env:
@@ -15,11 +12,11 @@ jobs:
       REDDIT_CLIENT_ID:  ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_SECRET:     ${{ secrets.REDDIT_SECRET }}
       REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
-      E11_KEY:           ${{ secrets.E11_KEY }}
-      PEXELS_KEY:        ${{ secrets.PEXELS_KEY }}
       REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}
       REDDIT_PASSWORD:   ${{ secrets.REDDIT_PASSWORD }}
+      E11_KEY:           ${{ secrets.E11_KEY }}
       E11_VOICE:         ${{ secrets.E11_VOICE }}
+      PEXELS_KEY:        ${{ secrets.PEXELS_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -49,29 +46,22 @@ jobs:
       - name: Install ffmpeg and jq
         run: sudo apt-get update && sudo apt-get install -y ffmpeg jq
 
-      # ---- tiny debug: print masked secret lengths ----
-      - name: Check env presence
-        run: |
-          echo "CID len=${#REDDIT_CLIENT_ID}"
-          echo "SEC len=${#REDDIT_SECRET}"
-          echo "UA  len=${#REDDIT_USER_AGENT}"
+      - name: Run quick test
+        run: make test
 
-      - name: Run batch
-        run: make daily
-
-      - name: Upload shorts
+      - name: Upload test video
         uses: actions/upload-artifact@v4
         with:
-          name: shorts
-          path: out/*.mp4
-          retention-days: 7
+          name: test-video
+          path: out/test_video.mp4
+          retention-days: 3
 
-      - name: Upload logs and data
+      - name: Upload test logs
         uses: actions/upload-artifact@v4
         with:
-          name: pipeline-logs
+          name: test-logs
           path: |
             hooks.csv
             scripts.json
             clean.json
-          retention-days: 7
+          retention-days: 3

@@ -57,3 +57,19 @@ Add the following secrets in your repository Settings › Secrets and variables 
 The system runs automatically via GitHub Actions:
 - Daily at 04:00 UTC: Generates 10 new short videos
 - Sundays at 03:00 UTC: Creates compilation from latest 30 videos
+
+## Quick Testing
+
+To run a quick test that generates a single 30-second video:
+
+1. Go to Actions tab in GitHub
+2. Select "Quick Test" workflow
+3. Click "Run workflow"
+4. Download the test video from artifacts after completion
+
+Or run locally:
+```bash
+make test
+```
+
+The quick test generates one video in under 5 minutes and uploads it as a test artifact with 3-day retention.

@@ -10,7 +10,9 @@ load_dotenv()
 class Narrator:
     def __init__(self):
         self.api_key = os.getenv('E11_KEY')
-        self.voice_id = os.getenv('E11_VOICE')
+        self.voice_id = os.getenv('E11_VOICE', 'EXAVITQu4vr4xnSDxMaL')
+        if not self.voice_id:
+            raise ValueError("E11_VOICE is not set")
         self.base_url = "https://api.elevenlabs.io/v1"
         
     def read_clean_scripts(self) -> List[Dict]:

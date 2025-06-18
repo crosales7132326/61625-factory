@@ -16,30 +16,43 @@ setup:
 	$(PYTHON) -m pip install -r requirements.txt
 	cd $(VISUALIZER_DIR) && $(NPM) install
 
-shorts: setup
+short: setup
 	@echo "Generating a single short video..."
 	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 	$(PYTHON) $(AGENTS_DIR)/trend_scout.py
-	$(PYTHON) $(AGENTS_DIR)/story_writer.py
+	$(PYTHON) $(AGENTS_DIR)/story_writer.py 1
 	$(PYTHON) $(AGENTS_DIR)/compliance_editor.py
 	$(PYTHON) $(AGENTS_DIR)/narrator.py
 	@echo "Rendering video..."
-	npx remotion render visualizer/src/index.ts StoryVideo $(OUT_DIR)/short_$$(date +%s).mp4 --codec=h264
+	@STORY_TEXT=$$(cat clean.json | jq -r '.[0].story // "Default story"' 2>/dev/null || echo "Default story"); \
+	AUDIO_FILE=$$(cat clean.json | jq -r '.[0].audio_file // "default.wav"' 2>/dev/null || echo "default.wav"); \
+	npx remotion render visualizer/src/index.ts StoryVideo $(OUT_DIR)/short_$$(date +%s).mp4 --codec=h264 --props="{\"storyText\":\"$$STORY_TEXT\", \"audioFile\":\"$$AUDIO_FILE\"}"
 	@echo "Short video generation complete!"
+
+shorts: short
 
 daily: setup
 	@echo "Generating 10 short videos for daily upload..."
 	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 	@for i in $$(seq 1 10); do \
 		echo "Generating video $$i/10..."; \
-		$(PYTHON) $(AGENTS_DIR)/trend_scout.py; \
-		$(PYTHON) $(AGENTS_DIR)/story_writer.py; \
-		$(PYTHON) $(AGENTS_DIR)/compliance_editor.py; \
-		$(PYTHON) $(AGENTS_DIR)/narrator.py; \
-		npx remotion render visualizer/src/index.ts StoryVideo $(OUT_DIR)/video_$$i.mp4 --codec=h264; \
+		make short; \
 		sleep 2; \
 	done
 	@echo "Daily video generation complete! Generated 10 videos."
+
+test: setup
+	@echo "Generating single test video (30 seconds)..."
+	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
+	$(PYTHON) $(AGENTS_DIR)/trend_scout.py
+	$(PYTHON) $(AGENTS_DIR)/story_writer.py 1
+	$(PYTHON) $(AGENTS_DIR)/compliance_editor.py
+	$(PYTHON) $(AGENTS_DIR)/narrator.py
+	@echo "Rendering test video..."
+	@STORY_TEXT=$$(cat clean.json | jq -r '.[0].story // "Test story"' 2>/dev/null || echo "Test story"); \
+	AUDIO_FILE=$$(cat clean.json | jq -r '.[0].audio_file // "default.wav"' 2>/dev/null || echo "default.wav"); \
+	npx remotion render visualizer/src/index.ts StoryVideo $(OUT_DIR)/test_video.mp4 --codec=h264 --frames=450 --props="{\"storyText\":\"$$STORY_TEXT\", \"audioFile\":\"$$AUDIO_FILE\"}"
+	@echo "Test video generation complete!"
 
 compile:
 	@echo "Creating compilation from latest 30 videos..."
@@ -62,8 +75,10 @@ clean:
 
 help:
 	@echo "Available targets:"
-	@echo "  shorts   - Generate a single short video"
+	@echo "  short    - Generate a single short video"
+	@echo "  shorts   - Alias for short"
 	@echo "  daily    - Generate 10 videos for daily upload"
+	@echo "  test     - Generate single test video (30 seconds)"
 	@echo "  compile  - Create compilation from latest 30 videos"
 	@echo "  clean    - Clean up generated files"
 	@echo "  setup    - Install dependencies"
