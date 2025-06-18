@@ -6,7 +6,8 @@ NPM    := npm
 VISUALIZER_DIR := visualizer
 AUDIO_DIR      := audio
 OUT_DIR        := out
-PUBLIC_AUDIO   := public/audio        # root‑level public dir
+# Root-level public dir
+PUBLIC_AUDIO   := public/audio
 
 # ------------------------------------------------------------------
 setup: ## install deps
