@@ -1,0 +1,10 @@
+name: CI Test
+
+on:
+  workflow_dispatch:   # lets you run it manually
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✅ GitHub Actions is alive!"
