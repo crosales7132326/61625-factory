@@ -43,41 +43,20 @@ jobs:
       - name: Install Node deps
         run: npm ci
 
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install ffmpeg & jq
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg jq
 
-      # ─────────────────────────────────────────
-      # Quick-test pipeline (1 hook → 1 video)
-      - name: Trend-Scout (fallback OK)
-        run: python agents/trend_scout.py --limit 1 --fallback
+      - name: 🔬 Run Makefile test target
+        run: make test
 
-      - name: Story-Writer
-        run: python agents/story_writer.py --limit 1
-
-      - name: Compliance-Editor
-        run: python agents/compliance_editor.py
-
-      - name: Narrator (1 WAV)
-        run: python agents/narrator.py --limit 1
-
-      - name: Render 30-sec short
-        run: |
-          npx remotion render \
-            visualizer/src/RemotionRoot.tsx \
-            StoryVideo \
-            out/test_video.mp4 \
-            --codec=h264 \
-            --frames=0-899
-      # ─────────────────────────────────────────
-
-      - name: Upload test video
+      - name: 📦 Upload test video
         uses: actions/upload-artifact@v4
         with:
           name: test-video
           path: out/test_video.mp4
           retention-days: 3
 
-      - name: Upload test logs
+      - name: 📦 Upload test logs
         uses: actions/upload-artifact@v4
         with:
           name: test-logs
