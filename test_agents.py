@@ -2,7 +2,7 @@ import os
 import json
 import csv
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 def test_hooks_csv_creation():
     """Test that hooks.csv is created and non-empty after trend_scout runs."""
@@ -131,6 +131,35 @@ def test_user_agent_present():
             call_args = mock_reddit.call_args
             assert 'user_agent' in call_args.kwargs, "praw.Reddit() must include user_agent parameter"
             assert call_args.kwargs['user_agent'] == 'test_agent', "user_agent must be read from environment"
+
+def test_reddit_auth_failure():
+    """Test that Reddit auth failure raises RuntimeError instead of using mock data."""
+    with patch('praw.Reddit') as mock_reddit:
+        mock_reddit.side_effect = Exception("403 Forbidden")
+        
+        from agents.trend_scout import TrendScout
+        scout = TrendScout()
+        
+        with pytest.raises(RuntimeError, match="Reddit authentication failed"):
+            scout.fetch_posts()
+
+def test_voice_id_validation():
+    """Test that E11_VOICE validation works properly."""
+    with patch.dict(os.environ, {'E11_VOICE': ''}):
+        with pytest.raises(ValueError, match="E11_VOICE is not set"):
+            from agents.narrator import Narrator
+            Narrator()
+
+def test_story_writer_limit():
+    """Test that story_writer respects limit parameter."""
+    test_hooks_data = "id,title,engagement_score\n1,Test 1,0.8\n2,Test 2,0.7\n3,Test 3,0.6"
+    
+    with patch('builtins.open', mock_open(read_data=test_hooks_data)):
+        from agents.story_writer import StoryWriter
+        writer = StoryWriter()
+        hooks = writer.read_hooks(1)
+        assert len(hooks) == 1
+        assert hooks[0]['id'] == '1'
 
 def test_file_cleanup():
     """Clean up test files after tests."""

@@ -61,10 +61,10 @@ class StoryWriter:
         with open('scripts.json', 'w', encoding='utf-8') as jsonfile:
             json.dump(scripts, jsonfile, indent=2, ensure_ascii=False)
     
-    def run(self):
+    def run(self, limit=10):
         """Main execution method."""
         print("Reading hooks from CSV...")
-        hooks = self.read_hooks(10)
+        hooks = self.read_hooks(limit)
         
         if not hooks:
             print("No hooks found. Exiting.")
@@ -95,5 +95,7 @@ class StoryWriter:
         print(f"Story writing complete! Generated {len(scripts)} scripts.")
 
 if __name__ == "__main__":
+    import sys
+    limit = int(sys.argv[1]) if len(sys.argv) > 1 else 10
     writer = StoryWriter()
-    writer.run()
+    writer.run(limit)
