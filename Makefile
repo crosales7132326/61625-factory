@@ -1,11 +1,10 @@
-# 61625-factory • Makefile
+# 61625‑factory • Makefile
 .PHONY: setup short shorts daily test compile clean help
 
 PYTHON := python3
 NPM    := npm
 
 VISUALIZER_DIR := visualizer
-PUBLIC_AUDIO   := public/audio      # <-- fixed path
 AUDIO_DIR      := audio
 OUT_DIR        := out
 
@@ -19,10 +18,12 @@ setup: ## install deps
 define render
 	@STORY_TEXT=$$(jq -r '.[0].story' clean.json | jq -Rs .); \
 	AUDIO_SRC_RAW=$$(jq -r '.[0].audio_file' clean.json); \
+	# prepend "audio/" if clean.json stored bare filename
 	AUDIO_SRC=$$(case "$$AUDIO_SRC_RAW" in audio/*) echo "$$AUDIO_SRC_RAW";; *) echo "audio/$$AUDIO_SRC_RAW";; esac); \
-	AUDIO_BASE=$$(basename $$AUDIO_SRC); \
-	mkdir -p $(PUBLIC_AUDIO); \
-	cp $$AUDIO_SRC $(PUBLIC_AUDIO)/$$AUDIO_BASE; \
+	AUDIO_BASE=$$(basename "$$AUDIO_SRC"); \
+	PUBLIC_DIR="public/audio"; \
+	mkdir -p "$$PUBLIC_DIR"; \
+	cp "$$AUDIO_SRC" "$$PUBLIC_DIR/$$AUDIO_BASE"; \
 	PROPS=$$(jq -n --arg st "$$STORY_TEXT" --arg af "audio/$$AUDIO_BASE" \
 	      '{"storyText":$$st,"audioFile":$$af}'); \
 	npx remotion render \
@@ -32,7 +33,7 @@ define render
 endef
 
 # ------------------------------------------------------------------
-short: setup ## 1 full-length Short
+short: setup ## 1 full‑length Short
 	mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 	$(PYTHON) agents/trend_scout.py  --limit 1
 	$(PYTHON) agents/story_writer.py --limit 1
@@ -49,7 +50,7 @@ daily: setup   ## 10 Shorts
 	@echo "✅ daily done"
 
 # ------------------------------------------------------------------
-test: setup    ## 30-s quick test
+test: setup    ## 30‑s quick test
 	mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 	$(PYTHON) agents/trend_scout.py  --limit 1 --fallback
 	$(PYTHON) agents/story_writer.py --limit 1 --fallback
