@@ -1,15 +1,5 @@
 # ───────────────────────────────────────────────────────────────
 # 61625-factory  •  Video-factory automation
-# ---------------------------------------------------------------
-# Targets:
-#   setup   – install deps
-#   short   – 1 narrated 60-s Short  (prod)
-#   shorts  – alias for short
-#   daily   – loop “short” 10×
-#   test    – 1 narrated 30-s Short, fallback OK
-#   compile – concat latest 30 MP4s
-#   clean   – delete artefacts
-#   help    – show target list
 # ───────────────────────────────────────────────────────────────
 
 .PHONY: setup short shorts daily test compile clean help
@@ -30,6 +20,16 @@ setup: ## install Python + Node deps
 	cd $(VISUALIZER_DIR) && $(NPM) ci
 
 # --------------------------------------------------------------
+define render_video
+	@STORY_TEXT=$$(jq -r '.[0].story' clean.json); \
+	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json); \
+	PROPS=$$(jq -n --arg st "$$STORY_TEXT" --arg af "$$AUDIO_FILE" \
+	    '{"storyText":$$st,"audioFile":$$af}'); \
+	npx remotion render visualizer/src/index.ts StoryVideo \
+	    $(1) --codec=h264 $(2) --props "$$PROPS"
+endef
+
+# --------------------------------------------------------------
 short: setup ## 1 full-length narrated Short
 	@echo "🎬 Generating a single short video…"
 	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
@@ -40,15 +40,7 @@ short: setup ## 1 full-length narrated Short
 	$(PYTHON) agents/narrator.py     --limit 1
 
 	@echo "🖥️  Rendering video…"
-	@STORY_TEXT=$$(jq -r '.[0].story' clean.json | jq -Rs .); \
-	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json); \
-	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json; \
-	npx remotion render \
-	    visualizer/src/index.ts \
-	    StoryVideo \
-	    $(OUT_DIR)/short_$$(date +%s).mp4 \
-	    --codec=h264 \
-	    --props=props.json
+	$(call render_video,$(OUT_DIR)/short_$$(date +%s).mp4,)
 
 	@echo "✅ short target complete!"
 
@@ -74,16 +66,8 @@ test: setup  ## quick CI test – 30-s video, fallback OK
 	$(PYTHON) agents/compliance_editor.py
 	$(PYTHON) agents/narrator.py     --limit 1 --fallback
 
-	@STORY_TEXT=$$(jq -r '.[0].story' clean.json | jq -Rs .); \
-	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json); \
-	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json; \
-	npx remotion render \
-	    visualizer/src/index.ts \
-	    StoryVideo \
-	    $(OUT_DIR)/test_video.mp4 \
-	    --codec=h264 \
-	    --frames=0-899 \
-	    --props=props.json
+	@echo "🖥️  Rendering test video…"
+	$(call render_video,$(OUT_DIR)/test_video.mp4,--frames=0-899)
 
 	@echo "✅ test target complete!"
 
@@ -96,18 +80,16 @@ compile: ## concat latest 30 MP4s
 	    ffmpeg -y -f concat -safe 0 -i /tmp/ffmpeg_list.txt -c copy \
 	           $(OUT_DIR)/compilation_$$(date +%s).mp4; \
 	    echo "✅ Compilation ready."; \
-	else \
-	    echo "⚠️  No MP4s found."; \
-	fi
+	else echo "⚠️  No MP4s found."; fi
 
 # --------------------------------------------------------------
 clean: ## delete generated artefacts
 	@echo "🧹 Cleaning artefacts…"
-	rm -f hooks.csv scripts.json clean.json props.json 2>/dev/null || true
+	rm -f hooks.csv scripts.json clean.json 2>/dev/null || true
 	rm -rf $(AUDIO_DIR) $(OUT_DIR)
 	@echo "Done."
 
 # --------------------------------------------------------------
 help: ## show this list
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | \
-	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	  awk 'BEGIN{FS=":.*?## "}$${printf "  \033[36m%-10s\033[0m %s\n",$$1,$$2}'
