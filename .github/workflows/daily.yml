@@ -2,8 +2,8 @@ name: Daily batch
 
 on:
   schedule:
-    - cron:  '0 4 * * *'     # daily 04:00 UTC
-    - cron:  '0 3 * * 0'     # Sunday compile 03:00 UTC
+    - cron: '0 4 * * *'    # daily 04 UTC
+    - cron: '0 3 * * 0'    # Sunday 03 UTC
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
       E11_KEY:           ${{ secrets.E11_KEY }}
       PEXELS_KEY:        ${{ secrets.PEXELS_KEY }}
-      # REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}   # ← uncomment if added
+      # REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}
       # REDDIT_PASSWORD:   ${{ secrets.REDDIT_PASSWORD }}
 
     steps:
@@ -48,31 +48,12 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      # ────────────────────────────────────────────────
-      # ---------- DEBUG BLOCK ----------
-      - name: DEBUG – show Reddit env
+      # ---- tiny debug: print masked secret lengths ----
+      - name: Check env presence
         run: |
-          echo "CID=[$REDDIT_CLIENT_ID]"
-          echo "SECRET length=${#REDDIT_SECRET}"
-          echo "UA=[$REDDIT_USER_AGENT]"
-          python - <<'PY'
-import os, praw
-print("\nPRAW self-test:")
-try:
-    reddit = praw.Reddit(
-        client_id=os.getenv("REDDIT_CLIENT_ID"),
-        client_secret=os.getenv("REDDIT_SECRET"),
-        user_agent=os.getenv("REDDIT_USER_AGENT"),
-        # username=os.getenv("REDDIT_USERNAME"),  # if you added these secrets
-        # password=os.getenv("REDDIT_PASSWORD"),
-        check_for_async=False,
-    )
-    print("read_only =", reddit.read_only)
-    print("my_username =", reddit.user.me())
-except Exception as e:
-    print("EXCEPTION:", e)
-PY
-      # ---------- END DEBUG BLOCK ----------
+          echo "CID len=${#REDDIT_CLIENT_ID}"
+          echo "SEC len=${#REDDIT_SECRET}"
+          echo "UA  len=${#REDDIT_USER_AGENT}"
 
       - name: Run batch
         run: make daily
