@@ -10,13 +10,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:                      # ← 4 spaces indent
-      OPENAI_KEY:          ${{ secrets.OPENAI_KEY }}
-      REDDIT_CLIENT_ID:    ${{ secrets.REDDIT_CLIENT_ID }}
-      REDDIT_SECRET:       ${{ secrets.REDDIT_SECRET }}
-      REDDIT_USER_AGENT:   ${{ secrets.REDDIT_USER_AGENT }}
-      E11_KEY:            ${{ secrets.E11_KEY }}
-      PEXELS_KEY:         ${{ secrets.PEXELS_KEY }}
+    env:
+      OPENAI_KEY:        ${{ secrets.OPENAI_KEY }}
+      REDDIT_CLIENT_ID:  ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_SECRET:     ${{ secrets.REDDIT_SECRET }}
+      REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      E11_KEY:           ${{ secrets.E11_KEY }}
+      PEXELS_KEY:        ${{ secrets.PEXELS_KEY }}
+      # Uncomment if you added these:
+      # REDDIT_USERNAME:   ${{ secrets.REDDIT_USERNAME }}
+      # REDDIT_PASSWORD:   ${{ secrets.REDDIT_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,20 +49,22 @@ jobs:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Run batch
-            - name: DEBUG – show Reddit env
+      # ---------- DEBUG BLOCK ----------
+      - name: DEBUG – show Reddit env
         run: |
           echo "CID=[$REDDIT_CLIENT_ID]"
           echo "SECRET length=${#REDDIT_SECRET}"
           echo "UA=[$REDDIT_USER_AGENT]"
           python - <<'PY'
-import os, pprint, praw
+import os, praw
 print("\nPRAW self-test:")
 try:
     reddit = praw.Reddit(
         client_id=os.getenv("REDDIT_CLIENT_ID"),
         client_secret=os.getenv("REDDIT_SECRET"),
         user_agent=os.getenv("REDDIT_USER_AGENT"),
+        # username=os.getenv("REDDIT_USERNAME"),  # if added
+        # password=os.getenv("REDDIT_PASSWORD"),  # if added
         check_for_async=False,
     )
     print("read_only =", reddit.read_only)
@@ -68,10 +73,12 @@ except Exception as e:
     print("EXCEPTION:", e)
 PY
         env:
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_SECRET:    ${{ secrets.REDDIT_SECRET }}
-          REDDIT_USER_AGENT:${{ secrets.REDDIT_USER_AGENT }}
+          REDDIT_CLIENT_ID:  ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_SECRET:     ${{ secrets.REDDIT_SECRET }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      # ---------------------------------
 
+      - name: Run batch
         run: make daily
 
       - name: Upload shorts
