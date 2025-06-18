@@ -19,6 +19,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 npm ci
+make assets
 ```
 
 2. Copy environment template and fill in your API keys:
