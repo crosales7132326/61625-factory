@@ -37,8 +37,10 @@ export const StoryVideo: React.FC<StoryVideoProps> = ({storyText, audioFile}) =>
         }}
       />
       
-      {/* Audio */}
-      <Audio src={staticFile(audioFile)} />
+      {/* Audio - only render if audioFile exists */}
+      {audioFile && audioFile !== 'default.wav' && (
+        <Audio src={staticFile(audioFile)} />
+      )}
       
       {/* Captions Container */}
       <AbsoluteFill
