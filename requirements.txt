@@ -1,0 +1,10 @@
+praw
+openai
+python-dotenv
+rapidfuzz
+tiktoken
+numpy
+google-api-python-client
+google-auth-oauthlib
+requests
+pytest
