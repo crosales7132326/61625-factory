@@ -6,10 +6,10 @@
 #   short   – 1 narrated 60-s Short  (prod)
 #   shorts  – alias for short
 #   daily   – loop “short” 10×
-#   test    – 1 narrated 30-s Short, works even if Reddit/OpenAI fail
+#   test    – 1 narrated 30-s Short, fallback OK
 #   compile – concat latest 30 MP4s
-#   clean   – delete generated assets
-#   help    – print this list
+#   clean   – delete artefacts
+#   help    – show target list
 # ───────────────────────────────────────────────────────────────
 
 .PHONY: setup short shorts daily test compile clean help
@@ -17,7 +17,6 @@
 # Commands
 PYTHON := python3
 NPM    := npm
-NODE   := node
 
 # Dirs
 VISUALIZER_DIR := visualizer
@@ -35,16 +34,15 @@ short: setup ## 1 full-length narrated Short
 	@echo "🎬 Generating a single short video…"
 	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 
-	# ── 1 hook → 1 script → 1 WAV ──
 	$(PYTHON) agents/trend_scout.py  --limit 1
 	$(PYTHON) agents/story_writer.py --limit 1
 	$(PYTHON) agents/compliance_editor.py
 	$(PYTHON) agents/narrator.py     --limit 1
 
-	# ── Render 60-s video ──
-	@STORY_TEXT=$$(jq -Rs '.' <<< "$$(jq -r '.[0].story'  clean.json)") && \
-	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json) && \
-	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json && \
+	@echo "🖥️  Rendering video…"
+	@STORY_TEXT=$$(jq -r '.[0].story' clean.json | jq -Rs .); \
+	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json); \
+	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json; \
 	npx remotion render \
 	    visualizer/src/index.ts \
 	    StoryVideo \
@@ -57,7 +55,7 @@ short: setup ## 1 full-length narrated Short
 shorts: short  ## alias
 
 # --------------------------------------------------------------
-daily: setup  ## 10 Shorts loop
+daily: setup  ## generate 10 Shorts
 	@echo "📅 Generating 10 Shorts for daily upload…"
 	@for i in $$(seq 1 10); do \
 	    echo "─── Video $$i/10 ───"; \
@@ -67,7 +65,7 @@ daily: setup  ## 10 Shorts loop
 	@echo "🏁 daily target complete!"
 
 # --------------------------------------------------------------
-test: setup  ## quick CI test – 30-s video, fallback mode
+test: setup  ## quick CI test – 30-s video, fallback OK
 	@echo "🧪 Generating 30-sec TEST video…"
 	@mkdir -p $(AUDIO_DIR) $(OUT_DIR)
 
@@ -76,9 +74,9 @@ test: setup  ## quick CI test – 30-s video, fallback mode
 	$(PYTHON) agents/compliance_editor.py
 	$(PYTHON) agents/narrator.py     --limit 1 --fallback
 
-	@STORY_TEXT=$$(jq -Rs '.' <<< "$$(jq -r '.[0].story'  clean.json)") && \
-	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json) && \
-	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json && \
+	@STORY_TEXT=$$(jq -r '.[0].story' clean.json | jq -Rs .); \
+	AUDIO_FILE=$$(jq -r '.[0].audio_file' clean.json); \
+	echo "{\"storyText\":$$STORY_TEXT,\"audioFile\":\"$$AUDIO_FILE\"}" > props.json; \
 	npx remotion render \
 	    visualizer/src/index.ts \
 	    StoryVideo \
@@ -105,7 +103,7 @@ compile: ## concat latest 30 MP4s
 # --------------------------------------------------------------
 clean: ## delete generated artefacts
 	@echo "🧹 Cleaning artefacts…"
-	rm -f hooks.csv scripts.json clean.json props.json
+	rm -f hooks.csv scripts.json clean.json props.json 2>/dev/null || true
 	rm -rf $(AUDIO_DIR) $(OUT_DIR)
 	@echo "Done."
 
