@@ -37,17 +37,24 @@ class TrendScout:
         posts = []
         posts_per_sub = 50  # 150 total / 3 subs
         
-        for sub_name in self.subreddits:
-            subreddit = self.reddit.subreddit(sub_name)
-            for post in subreddit.hot(limit=posts_per_sub):
-                if not post.stickied and len(post.title) > 10:
-                    posts.append({
-                        'title': post.title,
-                        'subreddit': sub_name,
-                        'score': post.score,
-                        'url': post.url,
-                        'id': post.id
-                    })
+        try:
+            for sub_name in self.subreddits:
+                subreddit = self.reddit.subreddit(sub_name)
+                for post in subreddit.hot(limit=posts_per_sub):
+                    if not post.stickied and len(post.title) > 10:
+                        posts.append({
+                            'title': post.title,
+                            'subreddit': sub_name,
+                            'score': post.score,
+                            'url': post.url,
+                            'id': post.id
+                        })
+        except Exception as e:
+            if "403" in str(e) or "401" in str(e) or "Forbidden" in str(e) or "Unauthorized" in str(e):
+                print("Reddit auth failed – check REDDIT_USER_AGENT, REDDIT_CLIENT_ID, REDDIT_SECRET")
+                exit(1)
+            else:
+                raise e
         
         return posts
     

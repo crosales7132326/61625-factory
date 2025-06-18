@@ -120,6 +120,18 @@ def test_clean_json_creation():
             assert len(clean_scripts) > 0, "clean.json should contain clean scripts"
             assert 'quality_score' in clean_scripts[0], "Each clean script should have a quality score"
 
+def test_user_agent_present():
+    """Test that user_agent is present in all praw.Reddit calls."""
+    with patch.dict(os.environ, {'REDDIT_USER_AGENT': 'test_agent'}):
+        with patch('praw.Reddit') as mock_reddit:
+            from agents.trend_scout import TrendScout
+            scout = TrendScout()
+            
+            mock_reddit.assert_called_once()
+            call_args = mock_reddit.call_args
+            assert 'user_agent' in call_args.kwargs, "praw.Reddit() must include user_agent parameter"
+            assert call_args.kwargs['user_agent'] == 'test_agent', "user_agent must be read from environment"
+
 def test_file_cleanup():
     """Clean up test files after tests."""
     test_files = ['hooks.csv', 'scripts.json', 'clean.json']

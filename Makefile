@@ -24,7 +24,7 @@ shorts: setup
 	$(PYTHON) $(AGENTS_DIR)/compliance_editor.py
 	$(PYTHON) $(AGENTS_DIR)/narrator.py
 	@echo "Rendering video..."
-	cd $(VISUALIZER_DIR) && npx remotion render src/index.ts StoryVideo ../$(OUT_DIR)/short_$$(date +%s).mp4 --props='{"storyText":"Generated story will be here","audioFile":"generated_audio.wav"}'
+	npx remotion render visualizer/src/RemotionRoot.tsx StoryVideo $(OUT_DIR)/short_$$(date +%s).mp4 --codec=h264
 	@echo "Short video generation complete!"
 
 daily: setup
@@ -36,7 +36,7 @@ daily: setup
 		$(PYTHON) $(AGENTS_DIR)/story_writer.py; \
 		$(PYTHON) $(AGENTS_DIR)/compliance_editor.py; \
 		$(PYTHON) $(AGENTS_DIR)/narrator.py; \
-		cd $(VISUALIZER_DIR) && npx remotion render src/index.ts StoryVideo ../$(OUT_DIR)/daily_$$(date +%s)_$$i.mp4 --props='{"storyText":"Generated story $$i","audioFile":"generated_audio.wav"}' && cd ..; \
+		npx remotion render visualizer/src/RemotionRoot.tsx StoryVideo $(OUT_DIR)/video_$$i.mp4 --codec=h264; \
 		sleep 2; \
 	done
 	@echo "Daily video generation complete! Generated 10 videos."
